@@ -19,7 +19,7 @@ pipeline {
 
         stage('Set AWS Credentials & List EC2') {
             steps {
-                withAWS(credentials: 'aws-credentials-id', region: "${AWS_REGION}") {
+                withAWS(credentials: 'aws2', region: "${AWS_REGION}") {
                     sh 'aws ec2 describe-instances --output table'
                 }
             }
