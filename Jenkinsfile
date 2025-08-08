@@ -1,23 +1,28 @@
 pipeline {
-  agent any
-  stages {
-    stage('Placeholder') {
-      steps {
-        echo 'Pipeline ready for Blue Ocean editing'
-      }
+    agent any
+
+    parameters {
+        file(name: 'GAME_SERVER_FILE', description: 'Upload your game server build file')
     }
 
-    stage('') {
-      steps {
-        echo 'Hello'
-      }
+    environment {
+        AWS_REGION = 'ap-south-1' // Change to your AWS region
     }
 
-  }
-  parameters {
-    file(name: 'GAME_SERVER_BUILD', description: 'Upload your Linux game server build (.tar.gz)')
-    string(name: 'BUILD_NAME', defaultValue: 'MyGameServer', description: 'Name of the build')
-    string(name: 'BUILD_VERSION', defaultValue: 'v1.0', description: 'Version of the build')
-    string(name: 'FLEET_NAME', defaultValue: 'MyGameFleet', description: 'Name of the fleet')
-  }
+    stages {
+        stage('Prepare') {
+            steps {
+                echo "Uploaded file: ${params.GAME_SERVER_FILE}"
+                sh 'ls -lh "${params.GAME_SERVER_FILE}"'
+            }
+        }
+
+        stage('Set AWS Credentials & List EC2') {
+            steps {
+                withAWS(credentials: 'aws-credentials-id', region: "${AWS_REGION}") {
+                    sh 'aws ec2 describe-instances --output table'
+                }
+            }
+        }
+    }
 }
