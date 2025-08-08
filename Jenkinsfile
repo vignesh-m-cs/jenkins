@@ -6,19 +6,25 @@ pipeline {
     }
 
     environment {
-        AWS_REGION = 'ap-south-1' // Change to your AWS region
+        AWS_REGION = 'ap-south-1'
     }
 
     stages {
         stage('Prepare') {
             steps {
                 script {
-                    echo "Uploaded file: ${params.GAME_SERVER_FILE}"
-                    sh """
-                        #!/bin/bash
-                        echo "Listing uploaded file:"
-                        ls -lh "${params.GAME_SERVER_FILE}"
-                    """
+                    if (params.GAME_SERVER_FILE) {
+                        echo "Uploaded file name: ${params.GAME_SERVER_FILE}"
+                        sh """
+                            #!/bin/bash
+                            echo "Copying uploaded file from Jenkins master storage..."
+                            cp "\${JENKINS_HOME}/jobs/${env.JOB_NAME}/builds/${env.BUILD_NUMBER}/fileParameters/${params.GAME_SERVER_FILE}" .
+                            echo "Listing file in workspace:"
+                            ls -lh "${params.GAME_SERVER_FILE}"
+                        """
+                    } else {
+                        error "No file was uploaded!"
+                    }
                 }
             }
         }
