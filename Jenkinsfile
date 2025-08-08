@@ -12,15 +12,27 @@ pipeline {
     stages {
         stage('Prepare') {
             steps {
-                echo "Uploaded file: ${params.GAME_SERVER_FILE}"
-                sh 'ls -lh "${params.GAME_SERVER_FILE}"'
+                script {
+                    echo "Uploaded file: ${params.GAME_SERVER_FILE}"
+                    sh """
+                        #!/bin/bash
+                        echo "Listing uploaded file:"
+                        ls -lh "${params.GAME_SERVER_FILE}"
+                    """
+                }
             }
         }
 
         stage('Set AWS Credentials & List EC2') {
             steps {
-                withAWS(credentials: 'aws2', region: "${AWS_REGION}") {
-                    sh 'aws ec2 describe-instances --output table'
+                script {
+                    withAWS(credentials: 'aws2', region: "${AWS_REGION}") {
+                        sh """
+                            #!/bin/bash
+                            echo "Listing EC2 instances in ${AWS_REGION}..."
+                            aws ec2 describe-instances --output table
+                        """
+                    }
                 }
             }
         }
