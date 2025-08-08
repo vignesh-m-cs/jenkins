@@ -8,5 +8,11 @@ pipeline {
       }
     }
 
+    stage('stage 2') {
+      steps {
+        sh 'echo pwd'
+      }
+    }
+
   }
 }
