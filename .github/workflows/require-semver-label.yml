@@ -1,44 +1,31 @@
-name: Require semver label
-
+name: Require PR Label
 on:
   pull_request:
-    types: [opened, reopened, synchronize, labeled, unlabeled, ready_for_review]
+    types: [opened, edited, labeled, unlabeled, synchronize]
 
 jobs:
-  require-label:
+  check-labels:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write   # needed to comment on PRs
     steps:
-      - name: Require exactly one semver label
-        id: check
-        uses: mheap/github-action-required-labels@v5
-        with:
-          mode: exactly
-          count: 1
-          labels: |
-            semver:major
-            semver:minor
-            semver:patch
-          add_comment: false   # we'll comment in next step
-
-      - name: Add comment if missing or invalid
-        if: failure()
+      - name: Require semver label
         uses: actions/github-script@v7
         with:
           script: |
-            const issue_number = context.payload.pull_request.number
-            const body = `
-Please add exactly one of these labels before merging:
-- \`semver:major\` – breaking changes
-- \`semver:minor\` – new features (backward-compatible)
-- \`semver:patch\` – bug fixes
+            const issue_number = context.payload.pull_request.number;
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            const requiredLabels = ["semver:major", "semver:minor", "semver:patch"];
 
-Once you add a label, the check will pass
-            `
-            await github.rest.issues.createComment({
-              ...context.repo,
-              issue_number,
-              body
-            })
+            const hasRequiredLabel = labels.filter(l => requiredLabels.includes(l));
 
+            if (hasRequiredLabel.length !== 1) {
+            const body = "Please add exactly one of these labels before merging: semver:major - breaking changes, semver:minor - new features (backward-compatible), semver:patch - bug fixes. Once you add a valid label, the check will pass.";
+
+
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number,
+                body
+              });
+
+              core.setFailed("PR must have exactly one semver label.");
+            }
