@@ -29,14 +29,12 @@ jobs:
           script: |
             const issue_number = context.payload.pull_request.number
             const body = `
-🚨 This pull request is missing a required label.
-
-Please add **exactly one** of these labels before merging:
+Please add exactly one of these labels before merging:
 - \`semver:major\` – breaking changes
 - \`semver:minor\` – new features (backward-compatible)
 - \`semver:patch\` – bug fixes
 
-Once you add a label, the check will pass ✅
+Once you add a label, the check will pass
             `
             await github.rest.issues.createComment({
               ...context.repo,
