@@ -1,0 +1,60 @@
+name: Auto Version Bump
+on:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Needed to fetch tags
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          git fetch --tags
+          latest=$(git tag --sort=-v:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            latest="0.0.0"
+          fi
+          echo "latest=$latest" >> $GITHUB_OUTPUT
+
+      - name: Determine next version
+        id: bump
+        run: |
+          IFS='.' read -r major minor patch <<< "${{ steps.get_tag.outputs.latest }}"
+          label=$(echo "${{ github.event.pull_request.labels[0].name }}")
+
+          if [ "$label" = "semver:major" ]; then
+            major=$((major+1))
+            minor=0
+            patch=0
+          elif [ "$label" = "semver:minor" ]; then
+            minor=$((minor+1))
+            patch=0
+          elif [ "$label" = "semver:patch" ]; then
+            patch=$((patch+1))
+          else
+            echo "Error: PR must have a semver label (semver:major, semver:minor, semver:patch)"
+            exit 1
+          fi
+
+          new_version="$major.$minor.$patch"
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "Next version will be $new_version"
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.bump.outputs.new_version }}
+          git push origin ${{ steps.bump.outputs.new_version }}
